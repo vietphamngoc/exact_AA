@@ -1,1 +1,1 @@
-# exact_AA
+Code for exact learning
