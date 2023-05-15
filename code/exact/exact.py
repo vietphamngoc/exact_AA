@@ -13,7 +13,7 @@ from code.circuits.tnn import TNN
 simulator = QasmSimulator()
 
 
-def exact_learn(ora: Oracle, tun_net: TNN, cut: int=100, step: int=1, k_0=0):
+def exact_learn(ora: Oracle, tun_net: TNN, k_0: int=0, step: int=1, cut: int=100):
     """
     Function performing the exact learning.
 
@@ -48,7 +48,7 @@ def exact_learn(ora: Oracle, tun_net: TNN, cut: int=100, step: int=1, k_0=0):
             if k not in schedule:
                 schedule.append(k)
             p += 1
-            k = int(np.floor(step**p))
+            k = int(np.ceil(step**p))
         schedule.append(k_max)
 
     s = 1
@@ -112,7 +112,83 @@ def exact_learn(ora: Oracle, tun_net: TNN, cut: int=100, step: int=1, k_0=0):
                     if input not in measured:
                         measurements["corrects"].append(input)
                         measured.append(input)
-        print(measurements['errors'])
+
+        # If s !=0: there are misclassified inputs to be corrected 
+        if s != 0:
+            tun_net.update_tnn(measurements["errors"])
+            n_update += 1
+            measurements['errors'] = []
+            measurements['corrects'] = []
+            measured = []
+
+        if n_update==cut:
+            return -1
+    return n_update
+
+
+def exact_learn_no_AA(ora: Oracle, tun_net: TNN, cut: int=100):
+    """
+    Function performing the exact learning.
+
+    Arguments:
+        - ora: Oracle, the query oracle for the target concept
+        - tun_net: TNN, the network to be tuned
+        - cut: int (default=100), the cut off threshold
+        - step: int (default=1), the increment step size
+
+    Returns:
+        - The number of updates needed to learn exactly the target function
+    """
+    n = ora.dim
+    N = int(np.round((2**n)*np.log(2**n)))
+    s = 1
+    n_update = 0
+
+    measurements = {}
+    measurements['errors'] = []
+    measurements['corrects'] = []
+    measured = []
+
+    # Stops when k = k_max and s = 0, 
+    while s > 0:
+        s = 0
+
+        tun_net.generate_network()
+
+        # Creating the circuit
+        qr = QuantumRegister(n, 'x')
+        qar = QuantumRegister(1, 'a')
+        cr = ClassicalRegister(n)
+        car = ClassicalRegister(1)
+        qc = QuantumCircuit(qr, qar, cr, car)
+
+        # Applying the oracle and the network
+        qc.append(ora.gate, range(n+1))
+        qc.append(tun_net.network, range(n+1))
+
+        # Measuring
+        qc.measure(qr, cr)
+        qc.measure(qar, car)
+
+        # Running the circuit
+        compiled_circuit = transpile(qc, simulator)
+        job = simulator.run(compiled_circuit, shots=N)
+        result = job.result()
+        counts = result.get_counts(compiled_circuit)
+
+        # Getting the errors and corrects and counting the errors
+        for sample in counts:
+            input = sample[2:][::-1]
+            if sample[0] == "1":
+                s += counts[sample]
+                if input not in measured:
+                    measurements["errors"].append(input)
+                    measured.append(input)
+            if sample[0] == "0":
+                if input not in measured:
+                    measurements["corrects"].append(input)
+                    measured.append(input)
+
         # If s !=0: there are misclassified inputs to be corrected 
         if s != 0:
             tun_net.update_tnn(measurements["errors"])
