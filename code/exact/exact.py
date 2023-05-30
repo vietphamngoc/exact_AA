@@ -59,7 +59,7 @@ def exact_learn(ora: Oracle, tun_net: TNN, k_0: int=0, step: int=1, cut: int=100
     measurements['corrects'] = []
     measured = []
 
-    # Stops when k = k_max and s = 0, 
+    # Stops when k = k_max and s = 0
     while s > 0:
         s = 0
         for k in schedule:
@@ -149,7 +149,7 @@ def exact_learn_no_AA(ora: Oracle, tun_net: TNN, cut: int=100):
     measurements['corrects'] = []
     measured = []
 
-    # Stops when k = k_max and s = 0, 
+    # Stops when k = k_max and s = 0
     while s > 0:
         s = 0
 
