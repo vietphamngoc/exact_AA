@@ -42,7 +42,7 @@ def exact_learn(ora: Oracle, tun_net: TNN, k_0: int=0, step: int=1, cut: int=100
         if k_0 == 0:
             p = 0
         else:
-            p = int(np.floor(np.log(k_0)/np.log(step)))
+            p = int(np.ceil(np.log(k_0)/np.log(step)))
         k = int(np.round(step**p))
         while k < k_max:
             if k not in schedule:
