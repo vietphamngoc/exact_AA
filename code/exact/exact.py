@@ -1,6 +1,5 @@
 import numpy as np
 
-import code.utilities.utility as util
 import code.circuits.qaa as qaa
 
 from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, transpile
@@ -13,7 +12,7 @@ from code.circuits.tnn import TNN
 simulator = QasmSimulator()
 
 
-def exact_learn(ora: Oracle, tun_net: TNN, k_0: int=0, step: int=1, cut: int=100):
+def exact_learn(ora: Oracle, tun_net: TNN, concept: str, k_0: int=0, step: int=1, cut: int=100):
     """
     Function performing the exact learning.
 
@@ -63,7 +62,11 @@ def exact_learn(ora: Oracle, tun_net: TNN, k_0: int=0, step: int=1, cut: int=100
     while s > 0:
         s = 0
         for k in schedule:
-            N_k = np.round((2**n)*(np.sin(np.pi/(4*k+6))/np.sin(np.pi/(4*k_0+2)))**2)
+            if concept[:6] == "delta_":
+                l = int(concept.split("_")[1])
+                N_k = np.round((2**l)*(np.sin(np.pi/(4*k+6))/np.sin(np.pi/(4*k_0+2)))**2)
+            else:
+                N_k = np.round((2**n)*(np.sin(np.pi/(4*k+6))/np.sin(np.pi/(4*k_0+2)))**2)
 
             if N_k >=4:
                 N = int(np.ceil(N_k*np.log(N_k)))

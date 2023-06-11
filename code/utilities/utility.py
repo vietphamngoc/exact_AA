@@ -48,7 +48,54 @@ def generate_functions(n: int, number: int):
     return functions
 
 
-def get_functions(n: int, number: int=0):
+def generate_delta_table(n, ctrls):
+    table = []
+    for i in range(2**n):
+        binary = format(i, f"0{n}b")
+        s = 0
+        for ctrl in ctrls:
+            p = 1
+            for c in ctrl:
+                if binary[c] == "0":
+                    p = 0
+                    break
+            s += p
+        table.append(str(s%2))
+    return "".join(table)
+
+
+def generate_delta_controls(n: int, k: int):
+    if k < 1 or k >= n:
+        raise ValueError("k should be 0 < k < n")
+    cards = []
+    rest = k
+    while rest > 0:
+        card = random.randint(1, rest)
+        cards.append(card)
+        rest -= card
+    choices = list(range(n))  
+    ctrls = []
+    for card in cards:
+        ctrl = []
+        for _ in range(card):
+            idx = random.randint(0, len(choices)-1)
+            ctrl.append(choices[idx])
+            choices.pop(idx)
+        ctrls.append(ctrl)
+    return ctrls
+
+
+def generate_delta_functions(n: int, k: int, number: int):
+    fcts = []
+    while len(fcts) < number:
+        ctrls = generate_delta_controls(n, k)
+        table = generate_delta_table(n, ctrls)
+        if table not in fcts:
+            fcts.append(table)
+    return fcts
+
+
+def get_functions(n: int, number: int, concept: str):
     """
     Function to save a set of target concepts in a file, if this file exists, retrieve the functions.
 
@@ -59,8 +106,11 @@ def get_functions(n: int, number: int=0):
     Returns:
         - A list containing the functions
     """
-    if number > 2**(2**n):
-        raise ValueError(f"number should not be greater than {2**(2**n)}")
+    if number > 2**(2**n) or number <= 0:
+        raise ValueError(f"number should be 0 < number <= {2**(2**n)}")
+    
+    if concept != any and concept[:6] != "delta_":
+        raise ValueError("type must be either 'any' or of the form 'delta_k'")
 
     directory = f"{os.getcwd()}/functions"
 
@@ -73,7 +123,11 @@ def get_functions(n: int, number: int=0):
         with open(file, "rb") as f:
             functions = pickle.load(f)
     else:
-        functions = generate_functions(n, number)
+        if concept == "any":
+            functions = generate_functions(n, number)
+        else:
+            k = int(concept.split("_")[1])
+            functions = generate_delta_functions(n, k, number)
 
         with open(file, "wb") as f:
             pickle.dump(functions, f)
@@ -82,4 +136,4 @@ def get_functions(n: int, number: int=0):
 
 
 
-        
+

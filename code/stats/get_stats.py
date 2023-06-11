@@ -11,18 +11,16 @@ from code.exact.exact import exact_learn, exact_learn_no_AA
 from code.stats.error_rate import get_error_rate
 
 
-def run_stats(n: int, number: int, runs: int, AA: bool=True, k_0: int=0, step: int=1):
-    print("Start")
-
+def get_settings(n, number, concept, AA, k_0, step):
     script_directory = os.path.dirname(__file__)
     os.chdir(script_directory)
     os.chdir("../..")
-    directory = f"{os.getcwd()}/results"
+    directory = f"{os.getcwd()}/results/{concept}"
     if not os.path.isdir(directory):
         os.makedirs(directory)
     os.chdir(directory)
 
-    functions = util.get_functions(n, number)
+    functions = util.get_functions(n, number, concept)
 
     if AA:
         run_directory = f"{os.getcwd()}/runs/{n}/{k_0}_{step}"
@@ -31,121 +29,68 @@ def run_stats(n: int, number: int, runs: int, AA: bool=True, k_0: int=0, step: i
 
     if not os.path.exists(run_directory):
         os.makedirs(run_directory)
+
+    return functions, run_directory
+
+
+def one_run(n, AA, k_0, step, functions, run_directory, j):
+    error_file = f"{run_directory}/errors_{j+1}.txt"
+    upd_file = f"{run_directory}/updates_{j+1}.txt"
+
+    if not os.path.exists(error_file) or not os.path.exists(upd_file):
+        errors = {}
+        ns_update = {}
+
+    else:
+        with open(error_file, "rb") as f:
+            errors = pickle.load(f)
+        with open(upd_file, "rb") as f:
+            ns_update = pickle.load(f)
+
+    for i in range(len(functions)):
+        if (i+1) % 5 == 0:
+            print(f"Run {j+1}: {i+1}/{len(functions)}")
+            with open(error_file, "wb") as f:
+                pickle.dump(errors, f)
+            with open(upd_file, "wb") as f:
+                pickle.dump(ns_update, f)
+
+        fct = functions[i]
+
+        if fct not in errors or fct not in ns_update:
+            ora = Oracle(n, fct)
+            tun_net = TNN(n)
+
+            if AA:
+                n_update = exact_learn(ora, tun_net, k_0=k_0, step=step)
+            else:
+                n_update = exact_learn_no_AA(ora, tun_net, cut=50)
+
+            ns_update[fct] = n_update
+
+
+            err = get_error_rate(ora, tun_net)
+            errors[fct] = err
+
+    with open(error_file, "wb") as f:
+        pickle.dump(errors, f)
+    with open(upd_file, "wb") as f:
+        pickle.dump(ns_update, f)
+
+
+def run_stats(n: int, number: int, runs: int, concept: str, AA: bool=True, k_0: int=2, step: int=2):
+    print("Start")
+    functions, run_directory = get_settings(n, number, concept, AA, k_0, step)
 
     for j in range(runs):
-        print(f"Run {j+1}")
-
-        error_file = f"{run_directory}/errors_{j+1}.txt"
-        upd_file = f"{run_directory}/updates_{j+1}.txt"
-
-        if not os.path.exists(error_file) or not os.path.exists(upd_file):
-            errors = {}
-            ns_update = {}
-
-        else:
-            with open(error_file, "rb") as f:
-                errors = pickle.load(f)
-            with open(upd_file, "rb") as f:
-                ns_update = pickle.load(f)
-
-        for i in range(len(functions)):
-            if (i+1) % 5 == 0:
-                print(f"{i+1}/{len(functions)}")
-                with open(error_file, "wb") as f:
-                    pickle.dump(errors, f)
-                with open(upd_file, "wb") as f:
-                    pickle.dump(ns_update, f)
-
-            fct = functions[i]
-
-            if fct not in errors or fct not in ns_update:
-                ora = Oracle(n, fct)
-                tun_net = TNN(n)
-
-                if AA:
-                    n_update = exact_learn(ora, tun_net, k_0=k_0, step=step)
-                else:
-                    n_update = exact_learn_no_AA(ora, tun_net, cut=50)
-
-                ns_update[fct] = n_update
+        one_run(n, AA, k_0, step, functions, run_directory, j)
 
 
-                err = get_error_rate(ora, tun_net)
-                errors[fct] = err
-
-        with open(error_file, "wb") as f:
-            pickle.dump(errors, f)
-        with open(upd_file, "wb") as f:
-            pickle.dump(ns_update, f)
-
-
-def parallel_stats(n: int, number: int, runs: int, AA: bool=True, k_0: int=0, step: int=1):
+def parallel_stats(n: int, number: int, runs: int, concept: str, AA: bool=True, k_0: int=2, step: int=2, n_jobs: int=4):
     print("Start")
+    functions, run_directory = get_settings(n, number, concept, AA, k_0, step)
 
-    script_directory = os.path.dirname(__file__)
-    os.chdir(script_directory)
-    os.chdir("../..")
-    directory = f"{os.getcwd()}/results"
-    if not os.path.isdir(directory):
-        os.makedirs(directory)
-    os.chdir(directory)
-    
-    functions = util.get_functions(n, number)
-
-    if AA:
-        run_directory = f"{os.getcwd()}/runs/{n}/{k_0}_{step}"
-    else:
-        run_directory = f"{os.getcwd()}/runs/{n}/no_AA"
-
-    if not os.path.exists(run_directory):
-        os.makedirs(run_directory)
-    print(run_directory)
-    def one_run(j):
-        print(f"Run {j+1}")
-        error_file = f"{run_directory}/errors_{j+1}.txt"
-        upd_file = f"{run_directory}/updates_{j+1}.txt"
-
-        if not os.path.exists(error_file) or not os.path.exists(upd_file):
-            errors = {}
-            ns_update = {}
-
-        else:
-            with open(error_file, "rb") as f:
-                errors = pickle.load(f)
-            with open(upd_file, "rb") as f:
-                ns_update = pickle.load(f)
-
-        for i in range(len(functions)):
-            if (i+1) % 5 == 0:
-                print(f"{i+1}/{len(functions)}")
-                with open(error_file, "wb") as f:
-                    pickle.dump(errors, f)
-                with open(upd_file, "wb") as f:
-                    pickle.dump(ns_update, f)
-
-            fct = functions[i]
-
-            if fct not in errors or fct not in ns_update:
-                ora = Oracle(n, fct)
-                tun_net = TNN(n)
-
-                if AA:
-                    n_update = exact_learn(ora, tun_net, k_0=k_0, step=step)
-                else:
-                    n_update = exact_learn_no_AA(ora, tun_net, cut=50)
-
-                ns_update[fct] = n_update
-
-
-                err = get_error_rate(ora, tun_net)
-                errors[fct] = err
-
-        with open(error_file, "wb") as f:
-            pickle.dump(errors, f)
-        with open(upd_file, "wb") as f:
-            pickle.dump(ns_update, f)
-
-    Parallel(n_jobs = 3)(delayed(one_run)(j) for j in range(runs))
+    Parallel(n_jobs=n_jobs)(delayed(one_run)(n, AA, k_0, step, functions, run_directory, j) for j in range(runs))
 
 
     
