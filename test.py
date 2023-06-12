@@ -1,27 +1,38 @@
 # import numpy as np
-# import os
+import os
 
 # import code.circuits.qaa as qaa
-# import code.utilities.utility as util
+import code.utilities.utility as util
 
 # from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, transpile
 # from qiskit.providers.aer import QasmSimulator
 
-# from code.circuits.oracle import Oracle
-# from code.circuits.tnn import TNN
+from code.circuits.oracle import Oracle
+from code.circuits.tnn import TNN
+from code.exact.exact import exact_learn
+from code.stats.error_rate import get_error_rate
 # from code.update_strat.updates import update_delta
 
-# n = 4
+n = 5
+l = 2
 
-# os.chdir(f"{os.getcwd()}/results/delta_3")
-# print(os.getcwd())
+os.chdir(f"{os.getcwd()}/results/delta_3")
+print(os.getcwd())
 # simulator = QasmSimulator()
 
-# fcts = util.get_functions(n, 16, "delta_3")
-# print(fcts[8])
+fcts = util.get_functions(n, 16, "delta_3")
 
-# ora = Oracle(n, fcts[8])
-# tun_net = TNN(n)
+
+for l in range(len(fcts)):
+    print(fcts[l])
+    ora = Oracle(n, fcts[l])
+    tun_net = TNN(n)
+
+    exact_learn(ora, tun_net, "delta_3", k_0=2, step=2)
+
+
+    print(get_error_rate(ora, tun_net))
+
 # tun_net.gates["0110"] = 1
 # # tun_net.gates["1001"] = 1
 # tun_net.generate_network()
@@ -61,9 +72,13 @@
 
 # update_delta(n, 3, measurements)
 
-from code.stats.get_stats import parallel_stats
+# from code.stats.get_stats import parallel_stats
 
-parallel_stats(5, 16, 20, "delta_4")
+# parallel_stats(5, 16, 20, "delta_4")
+
+
+
+
 
 
 
