@@ -7,12 +7,13 @@ from qiskit.providers.aer import QasmSimulator
 
 from code.circuits.oracle import Oracle
 from code.circuits.tnn import TNN
+from code.update_strat.updates import update_delta
 
 
 simulator = QasmSimulator()
 
 
-def exact_learn(ora: Oracle, tun_net: TNN, concept: str, k_0: int=0, step: int=1, cut: int=100):
+def exact_learn(ora: Oracle, tun_net: TNN, concept: str, k_0: int=2, step: int=2, cut: int=100):
     """
     Function performing the exact learning.
 
@@ -73,8 +74,6 @@ def exact_learn(ora: Oracle, tun_net: TNN, concept: str, k_0: int=0, step: int=1
             else:
                 N = 5
 
-            tun_net.generate_network()
-
             diffusion = qaa.get_diffusion_operator(ora, tun_net, k_0)
 
             # Creating the circuit
@@ -115,10 +114,16 @@ def exact_learn(ora: Oracle, tun_net: TNN, concept: str, k_0: int=0, step: int=1
                     if input not in measured:
                         measurements["corrects"].append(input)
                         measured.append(input)
+  
+        if concept[:6] == "delta_":
+            to_update = update_delta(n, measurements, tun_net)
+        else:
+            to_update = measurements["errors"]
 
         # If s !=0: there are misclassified inputs to be corrected 
         if s != 0:
-            tun_net.update_tnn(measurements["errors"])
+            tun_net.update_tnn(to_update)
+            print([k for k,v in tun_net.gates.items() if v==1])
             n_update += 1
             measurements['errors'] = []
             measurements['corrects'] = []
