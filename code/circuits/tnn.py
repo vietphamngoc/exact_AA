@@ -69,3 +69,5 @@ class TNN:
                 raise ValueError(f"{s} is not a gate")
             else:
                 self.gates[s] = (self.gates[s]+1)%2
+        
+        self.generate_network()
