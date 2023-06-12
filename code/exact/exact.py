@@ -123,7 +123,6 @@ def exact_learn(ora: Oracle, tun_net: TNN, concept: str, k_0: int=2, step: int=2
         # If s !=0: there are misclassified inputs to be corrected 
         if s != 0:
             tun_net.update_tnn(to_update)
-            print([k for k,v in tun_net.gates.items() if v==1])
             n_update += 1
             measurements['errors'] = []
             measurements['corrects'] = []
