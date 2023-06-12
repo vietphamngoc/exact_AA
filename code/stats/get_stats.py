@@ -33,7 +33,7 @@ def get_settings(n, number, concept, AA, k_0, step):
     return functions, run_directory
 
 
-def one_run(n, AA, k_0, step, functions, run_directory, j):
+def one_run(n, AA, concept, functions, k_0, step, run_directory, j):
     error_file = f"{run_directory}/errors_{j+1}.txt"
     upd_file = f"{run_directory}/updates_{j+1}.txt"
 
@@ -62,7 +62,7 @@ def one_run(n, AA, k_0, step, functions, run_directory, j):
             tun_net = TNN(n)
 
             if AA:
-                n_update = exact_learn(ora, tun_net, k_0=k_0, step=step)
+                n_update = exact_learn(ora, tun_net, concept, k_0=k_0, step=step)
             else:
                 n_update = exact_learn_no_AA(ora, tun_net, cut=50)
 
@@ -83,14 +83,14 @@ def run_stats(n: int, number: int, runs: int, concept: str, AA: bool=True, k_0: 
     functions, run_directory = get_settings(n, number, concept, AA, k_0, step)
 
     for j in range(runs):
-        one_run(n, AA, k_0, step, functions, run_directory, j)
+        one_run(n, AA, concept, functions, k_0, step, run_directory, j)
 
 
 def parallel_stats(n: int, number: int, runs: int, concept: str, AA: bool=True, k_0: int=2, step: int=2, n_jobs: int=4):
     print("Start")
     functions, run_directory = get_settings(n, number, concept, AA, k_0, step)
 
-    Parallel(n_jobs=n_jobs)(delayed(one_run)(n, AA, k_0, step, functions, run_directory, j) for j in range(runs))
+    Parallel(n_jobs=n_jobs)(delayed(one_run)(n, AA, concept, functions, k_0, step, run_directory, j) for j in range(runs))
 
 
     
