@@ -75,7 +75,7 @@
 from code.stats.get_stats import parallel_stats
 
 for n in range(4, 9):
-    for k in range(1, n):
+    for k in range(2, n):
         parallel_stats(n, 16, 50, f"delta_{k}")
 
 
