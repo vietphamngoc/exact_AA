@@ -91,6 +91,7 @@ def generate_delta_functions(n: int, k: int, number: int):
         ctrls = generate_delta_controls(n, k)
         table = generate_delta_table(n, ctrls)
         if table not in fcts:
+            print(table)
             fcts.append(table)
     return fcts
 
