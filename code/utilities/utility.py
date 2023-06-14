@@ -91,10 +91,42 @@ def generate_delta_functions(n: int, k: int, number: int):
         ctrls = generate_delta_controls(n, k)
         table = generate_delta_table(n, ctrls)
         if table not in fcts:
-            print(table)
             fcts.append(table)
     return fcts
 
+
+def generate_junta(n: int, k:int):
+    if k < 1 or k >= n:
+        raise ValueError("k should be 0 < k < n")
+    ctrls = []
+    choices = list(range(n))
+    sub_table = ""
+    table = ""
+
+    while len(ctrls) < k:
+        idx = random.randint(0, len(choices)-1)
+        ctrls.append(choices[idx])
+        choices.pop(idx)
+    ctrls.sort()
+
+    for _ in range(2**k):
+        sub_table += str(random.randint(0,1))
+
+    for i in range(2**n):
+        binary = format(i, f"0{n}b")
+        sub_binary = "".join([binary[b] for b in ctrls])
+        equiv = int(sub_binary, 2)
+        table += sub_table[equiv]
+    return table
+
+
+def generate_junta_functions(n: int, k: int, number: int):
+    fcts = []
+    while len(fcts) < number:
+        table = generate_junta(n, k)
+        if table not in fcts:
+            fcts.append(table)
+    return fcts
 
 def get_functions(n: int, number: int, concept: str):
     """
@@ -110,8 +142,8 @@ def get_functions(n: int, number: int, concept: str):
     if number > 2**(2**n) or number <= 0:
         raise ValueError(f"number should be 0 < number <= {2**(2**n)}")
     
-    if concept != any and concept[:6] != "delta_":
-        raise ValueError("type must be either 'any' or of the form 'delta_k'")
+    if concept != any and concept[:6] not in ["delta_", "junta_"]:
+        raise ValueError("type must be either 'any' or of the form 'delta_k' or 'junta_k'")
 
     directory = f"{os.getcwd()}/functions"
 
@@ -126,9 +158,12 @@ def get_functions(n: int, number: int, concept: str):
     else:
         if concept == "any":
             functions = generate_functions(n, number)
-        else:
+        elif concept[:6] == "delta_":
             k = int(concept.split("_")[1])
             functions = generate_delta_functions(n, k, number)
+        else:
+            k = int(concept.split("_")[1])
+            functions = generate_junta_functions(n, k, number)
 
         with open(file, "wb") as f:
             pickle.dump(functions, f)
