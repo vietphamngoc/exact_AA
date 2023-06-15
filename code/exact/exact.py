@@ -7,7 +7,7 @@ from qiskit.providers.aer import QasmSimulator
 
 from code.circuits.oracle import Oracle
 from code.circuits.tnn import TNN
-from code.update_strat.updates import update_delta
+from code.update_strat.updates import update_delta, update_junta
 
 
 simulator = QasmSimulator()
@@ -43,6 +43,7 @@ def exact_learn(ora: Oracle, tun_net: TNN, concept: str, k_0: int=2, step: int=2
             p = 0
         else:
             p = int(np.ceil(np.log(k_0)/np.log(step)))
+
         k = int(np.round(step**p))
         while k < k_max:
             if k not in schedule:
@@ -73,6 +74,10 @@ def exact_learn(ora: Oracle, tun_net: TNN, concept: str, k_0: int=2, step: int=2
                 N = int(np.ceil(N_k*np.log(N_k)))
             else:
                 N = 5
+
+            if concept[:6] == "junta_":
+                l = int(concept.split("_")[1])
+                N = 2**l
 
             diffusion = qaa.get_diffusion_operator(ora, tun_net, k_0)
 
@@ -117,12 +122,18 @@ def exact_learn(ora: Oracle, tun_net: TNN, concept: str, k_0: int=2, step: int=2
   
         if concept[:6] == "delta_":
             to_update = update_delta(n, measurements, tun_net)
+        elif concept[:6] == "junta_":
+            to_update = update_junta(n, l, measurements, tun_net)
         else:
-            to_update = measurements["errors"]
+            if "0"*n in measurements["errors"]:
+                to_update = ["0"*n]
+            else:
+                to_update = measurements["errors"]
 
         # If s !=0: there are misclassified inputs to be corrected 
         if s != 0:
             tun_net.update_tnn(to_update)
+            # print(f"network: {[k for k,v in tun_net.gates.items() if v==1]}\n")
             n_update += 1
             measurements['errors'] = []
             measurements['corrects'] = []
