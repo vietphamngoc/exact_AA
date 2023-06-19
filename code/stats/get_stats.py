@@ -11,7 +11,7 @@ from code.exact.exact import exact_learn, exact_learn_no_AA
 from code.stats.error_rate import get_error_rate
 
 
-def get_settings(n, number, concept, AA, k_0, step):
+def get_settings(n, number, concept, AA):
     script_directory = os.path.dirname(__file__)
     os.chdir(script_directory)
     os.chdir("../..")
@@ -23,7 +23,7 @@ def get_settings(n, number, concept, AA, k_0, step):
     functions = util.get_functions(n, number, concept)
 
     if AA:
-        run_directory = f"{os.getcwd()}/runs/{n}/{k_0}_{step}"
+        run_directory = f"{os.getcwd()}/runs/{n}"
     else:
         run_directory = f"{os.getcwd()}/runs/{n}/no_AA"
 
@@ -33,7 +33,7 @@ def get_settings(n, number, concept, AA, k_0, step):
     return functions, run_directory
 
 
-def one_run(n, AA, concept, functions, k_0, step, run_directory, j):
+def one_run(n, AA, concept, functions, run_directory, j):
     error_file = f"{run_directory}/errors_{j+1}.txt"
     upd_file = f"{run_directory}/updates_{j+1}.txt"
 
@@ -62,7 +62,7 @@ def one_run(n, AA, concept, functions, k_0, step, run_directory, j):
             tun_net = TNN(n)
 
             if AA:
-                n_update = exact_learn(ora, tun_net, concept, k_0=k_0, step=step)
+                n_update = exact_learn(ora, tun_net, concept, 2, 2)
             else:
                 n_update = exact_learn_no_AA(ora, tun_net, cut=50)
 
@@ -78,19 +78,19 @@ def one_run(n, AA, concept, functions, k_0, step, run_directory, j):
         pickle.dump(ns_update, f)
 
 
-def run_stats(n: int, number: int, runs: int, concept: str, AA: bool=True, k_0: int=2, step: int=2):
+def run_stats(n: int, number: int, runs: int, concept: str, AA: bool=True):
     print("Start")
-    functions, run_directory = get_settings(n, number, concept, AA, k_0, step)
+    functions, run_directory = get_settings(n, number, concept, AA)
 
     for j in range(runs):
-        one_run(n, AA, concept, functions, k_0, step, run_directory, j)
+        one_run(n, AA, concept, functions, run_directory, j)
 
 
-def parallel_stats(n: int, number: int, runs: int, concept: str, AA: bool=True, k_0: int=2, step: int=2, n_jobs: int=4):
+def parallel_stats(n: int, number: int, runs: int, concept: str, AA: bool=True, n_jobs: int=4):
     print("Start")
-    functions, run_directory = get_settings(n, number, concept, AA, k_0, step)
+    functions, run_directory = get_settings(n, number, concept, AA)
 
-    Parallel(n_jobs=n_jobs)(delayed(one_run)(n, AA, concept, functions, k_0, step, run_directory, j) for j in range(runs))
+    Parallel(n_jobs=n_jobs)(delayed(one_run)(n, AA, concept, functions, run_directory, j) for j in range(runs))
 
 
     
