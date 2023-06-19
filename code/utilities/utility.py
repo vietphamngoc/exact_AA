@@ -100,7 +100,7 @@ def generate_junta(n: int, k:int):
         raise ValueError("k should be 0 < k < n")
     ctrls = []
     choices = list(range(n))
-    sub_table = ""
+    sub_table = "0"
     table = ""
 
     while len(ctrls) < k:
@@ -109,7 +109,7 @@ def generate_junta(n: int, k:int):
         choices.pop(idx)
     ctrls.sort()
 
-    for _ in range(2**k):
+    for _ in range(1,2**k):
         sub_table += str(random.randint(0,1))
 
     for i in range(2**n):
