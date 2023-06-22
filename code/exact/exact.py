@@ -110,12 +110,12 @@ def exact_learn(ora: Oracle, tun_net: TNN, concept: str, k_0: int=2, step: int=2
             # Getting the errors and corrects and counting the errors
             for sample in counts:
                 input = sample[3:][::-1]
-                if sample[0:2] == "11":
+                if sample[1] == "1":
                     s += counts[sample]
                     if input not in measured:
                         measurements["errors"].append(input)
                         measured.append(input)
-                if sample[0:2] == "00":
+                if sample[1] == "0":
                     if input not in measured:
                         measurements["corrects"].append(input)
                         measured.append(input)
