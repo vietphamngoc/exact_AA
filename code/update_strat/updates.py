@@ -30,7 +30,7 @@ def update_delta(n: int, measurements: dict, tun_net: TNN):
 
 def update_junta(n: int, k: int, measurements: dict, tun_net: TNN):
     active = [util.str_to_ones(o) for o,v in tun_net.gates.items() if v==1]
-    print(f"active: {active}")
+    # print(f"active: {active}")
     to_update = []
     ordered_errors = [[] for _ in range(n+1)]
 
