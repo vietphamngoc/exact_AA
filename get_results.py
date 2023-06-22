@@ -1,10 +1,7 @@
-from code.stats.get_stats import run_stats
+from code.stats.get_stats import parallel_stats
 
-for n in range(9):
-	run_stats(n, 16, 50, False)
-	for k_0 in range(5):
-		run_stats(n, 16, 50, k_0=k_0, step=2)
-
-
+for n in range(4,9):
+	for k in range(2, n):
+		parallel_stats(n, 16, 25, f"junta_{k}")
 
 
