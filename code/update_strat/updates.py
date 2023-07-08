@@ -29,14 +29,21 @@ def update_delta(n: int, measurements: dict, tun_net: TNN):
 
 
 def update_junta(n: int, k: int, measurements: dict, tun_net: TNN):
+    # print(measurements)
     active = [util.str_to_ones(o) for o,v in tun_net.gates.items() if v==1]
     # print(f"active: {active}")
     to_update = []
     ordered_errors = [[] for _ in range(n+1)]
+    ordered_corrects = [[] for _ in range(n+1)]
+
 
     for err in measurements['errors']:
         ones = util.str_to_ones(err)
         ordered_errors[len(ones)].append(ones)
+
+    for cor in measurements['corrects']:
+        ones = util.str_to_ones(cor)
+        ordered_corrects[len(ones)].append(ones)
 
     # for i in range(k+1):
     #     for ones in ordered_errors[i]:
@@ -44,12 +51,20 @@ def update_junta(n: int, k: int, measurements: dict, tun_net: TNN):
     # print(f"upd1: {to_update}")
     for i in range(n+1):
         for ones in ordered_errors[i]:
-            subset = False
+            filter = 0
             for upd in to_update:
                 if upd.issubset(ones):
-                    subset = True
-                    break
-            if not subset:
+                    filter += 1
+            if filter%2 == 0:
                 add_remove(ones, to_update, active, k) 
-    # print(f"upd2: {to_update}")
+        
+        for ones in ordered_corrects[i]:
+            filter = 0
+            for upd in to_update:
+                if upd.issubset(ones):
+                    filter += 1
+            if filter%2 == 1:
+                # print(filter)
+                add_remove(ones, to_update, active, k) 
+    # print(f"upd: {to_update}")
     return [util.ones_to_str(o, n) for o in to_update]
