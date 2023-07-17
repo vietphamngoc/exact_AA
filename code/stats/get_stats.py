@@ -78,19 +78,19 @@ def one_run(n, AA, concept, functions, run_directory, j):
         pickle.dump(ns_update, f)
 
 
-def run_stats(n: int, number: int, runs: int, concept: str, AA: bool=True):
+def run_stats(n: int, number: int, runs: list, concept: str, AA: bool=True):
     print("Start")
     functions, run_directory = get_settings(n, number, concept, AA)
 
-    for j in range(runs):
+    for j in runs:
         one_run(n, AA, concept, functions, run_directory, j)
 
 
-def parallel_stats(n: int, number: int, runs: int, concept: str, AA: bool=True, n_jobs: int=4):
+def parallel_stats(n: int, number: int, runs: list, concept: str, AA: bool=True, n_jobs: int=4):
     print("Start")
     functions, run_directory = get_settings(n, number, concept, AA)
 
-    Parallel(n_jobs=n_jobs)(delayed(one_run)(n, AA, concept, functions, run_directory, j) for j in range(runs))
+    Parallel(n_jobs=n_jobs)(delayed(one_run)(n, AA, concept, functions, run_directory, j) for j in runs)
 
 
     
