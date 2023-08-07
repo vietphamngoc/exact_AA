@@ -128,6 +128,7 @@ def generate_junta_functions(n: int, k: int, number: int):
             fcts.append(table)
     return fcts
 
+
 def get_functions(n: int, number: int, concept: str):
     """
     Function to save a set of target concepts in a file, if this file exists, retrieve the functions.

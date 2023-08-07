@@ -4,6 +4,9 @@ import code.circuits.qaa as qaa
 
 from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, transpile
 from qiskit.providers.aer import QasmSimulator
+from qiskit.quantum_info import DensityMatrix
+
+from scipy.special import binom
 
 from code.circuits.oracle import Oracle
 from code.circuits.tnn import TNN
@@ -40,17 +43,26 @@ def exact_learn(ora: Oracle, tun_net: TNN, concept: str, k_0: int=2, step: int=2
     else:
         schedule = [k_0]
         if k_0 == 0:
-            p = 0
+            power = 0
         else:
-            p = int(np.ceil(np.log(k_0)/np.log(step)))
+            power = int(np.ceil(np.log(k_0)/np.log(step)))
 
-        k = int(np.round(step**p))
+        k = int(np.round(step**power))
         while k < k_max:
             if k not in schedule:
                 schedule.append(k)
-            p += 1
-            k = int(np.ceil(step**p))
+            power += 1
+            k = int(np.ceil(step**power))
         schedule.append(k_max)
+
+    if concept[:6] == "junta_":
+        l = int(concept.split("_")[1])
+
+        num = 0
+        for i in range(l+1):
+            num += binom(n,i)
+        angle = np.arcsin(np.sqrt(num/2**n))
+        rounds = int(np.round(((np.pi/(2*angle))-1)/2))
 
     s = 1
     n_update = 0
@@ -76,10 +88,9 @@ def exact_learn(ora: Oracle, tun_net: TNN, concept: str, k_0: int=2, step: int=2
                 N = 5
 
             if concept[:6] == "junta_":
-                l = int(concept.split("_")[1])
                 N = 2**l
 
-            diffusion = qaa.get_diffusion_operator(ora, tun_net, k_0)
+            # diffusion = qaa.get_diffusion_operator(ora, tun_net, k_0)
 
             # Creating the circuit
             qr = QuantumRegister(n, 'x')
@@ -90,8 +101,20 @@ def exact_learn(ora: Oracle, tun_net: TNN, concept: str, k_0: int=2, step: int=2
 
             # Applying the oracle, the network and scaling down
             qc.append(ora.gate, range(n+1))
+
+            if concept[:6] == "junta_":
+                original_density = DensityMatrix(qc)
+                diffusion_k = qaa.get_diffusion_k(original_density, n, k)
+
+                for r in range(rounds):
+                    qc.append(diffusion_k,range(n+2))
+
+            density = DensityMatrix(qc)
+
             qc.append(tun_net.network, range(n+1))
             qc.cry(np.pi/(2*k_0+1), qar[0], qar[1])
+
+            diffusion = qaa.get_diffusion_from_density(density, tun_net, k_0)
 
             # Applying amplitude amplification
             for m in range(k):
